@@ -1,11 +1,8 @@
 import urllib.request, json
 import pprint, datetime
+from pymongo import MongoClient
 
 URL = 'https://api.covid19api.com/dayone/country/'
-
-class Country:
-    def __init__(self, name):
-        self.name = name
 
 class CountryEvents:
     def __init__(self, country):
@@ -13,7 +10,8 @@ class CountryEvents:
         self.events = []
 
     def read_data(self):
-        self.events = DataReader(URL, country).filter_data()
+        self.events = DataReader(URL, self.country).filter_data()
+        return self.events
 
 class Day:
     def __init__(self, country, date, confirmed, deaths, recovered, active):
@@ -58,7 +56,49 @@ class DataReader:
                 new_data.append(day)
         return new_data
 
+class DatabaseHandler:
+    def __init__(self):
+        self.client = MongoClient('127.0.0.1', 27017)
+        self.db = self.client['covid_db']
+        self.country = self.db.country
+        self.check_is_update_necessary()
 
-data = DataReader('https://api.covid19api.com/dayone/country/', 'poland')
+    def check_is_update_necessary(self):      
+        for c in self.country.find({}):
+            if c['events'][-1]['date'].day + 1 < datetime.datetime.now().day or c['events'][-1]['date'].month < datetime.datetime.now().month:
+                tmp_cntry = CountryEvents(c['name'])
+                tmp_cntry.read_data()
+                self.country.update_one({'name': c['name']}, {'$set': {'events': tmp_cntry.events}})
 
-pprint.pprint(data.filter_by_date('2020-05-14', '2020-06-17'))
+    def add_country(self):
+        inp = str(input("Give country name (reference) "))
+        ctr = CountryEvents(inp)
+        ctr.read_data()
+        new_country = {
+            'name': ctr.country,
+            'events': ctr.events
+        }
+        self.country.insert_one(new_country)
+
+    def show_data(self):
+        for c in self.country.find({}):
+            print(c['name'])
+            pprint.pprint(c['events'])
+
+def menu():
+    terminator = 0
+    dh = DatabaseHandler()
+    while not terminator:
+        choice = str(input('What do you want to do? print - prints all data, add - adds new country '))
+        if choice == 'add':
+            dh.add_country()
+        if choice == 'print':
+            dh.show_data()
+        if choice == 'quit':
+            terminator = 1
+        dh.check_is_update_necessary()
+
+# data = DataReader('https://api.covid19api.com/dayone/country/', 'poland')
+
+# pprint.pprint(data.filter_by_date('2020-05-14', '2020-06-25'))
+menu()
