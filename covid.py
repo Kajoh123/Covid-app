@@ -1,5 +1,6 @@
 import urllib.request, json
 import pprint, datetime
+import matplotlib.pyplot as plt
 from pymongo import MongoClient
 
 URL = 'https://api.covid19api.com/dayone/country/'
@@ -89,15 +90,28 @@ class DatabaseHandler:
             print(c['name'])
             pprint.pprint(c['events'])
 
+    def show_on_screen(self):
+        for c in self.country.find({}):
+            axis_x = []
+            axis_y = []
+            for event in c['events']:
+                axis_x.append(event['date'])
+                axis_y.append(event['cases'])
+            plt.plot(axis_x, axis_y)
+            plt.title(c['name'])
+            plt.show()
+
 def menu():
     terminator = 0
     dh = DatabaseHandler()
     while not terminator:
-        choice = str(input('What do you want to do? print - prints all data, add - adds new country, quit - quits app '))
+        choice = str(input('What do you want to do? print - prints all data, add - adds new country, show - showing plot (using matplotlib) quit - quits app '))
         if choice == 'add':
             dh.add_country()
         if choice == 'print':
             dh.show_data()
+        if choice == 'show':
+            dh.show_on_screen()
         if choice == 'quit':
             terminator = 1
         dh.check_is_update_necessary()
