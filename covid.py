@@ -73,7 +73,11 @@ class DatabaseHandler:
     def add_country(self):
         inp = str(input("Give country name (reference) "))
         ctr = CountryEvents(inp)
-        ctr.read_data()
+        try:
+            ctr.read_data()
+        except urllib.error.HTTPError:
+            print("Country with this id does not exist!")
+            return None
         new_country = {
             'name': ctr.country,
             'events': ctr.events
@@ -89,7 +93,7 @@ def menu():
     terminator = 0
     dh = DatabaseHandler()
     while not terminator:
-        choice = str(input('What do you want to do? print - prints all data, add - adds new country '))
+        choice = str(input('What do you want to do? print - prints all data, add - adds new country, quit - quits app '))
         if choice == 'add':
             dh.add_country()
         if choice == 'print':
