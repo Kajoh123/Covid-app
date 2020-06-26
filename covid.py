@@ -100,16 +100,37 @@ class DatabaseHandler:
             plt.plot(axis_x, axis_y)
             plt.title(c['name'])
             plt.show()
+    
+    def show_data_by_date(self, start, end):
+        new_tab = []
+        for c in self.country.find({}):
+            print(c['name'])
+            for day in c['events']:
+                if start <= day['date'] and end >= day['date']:
+                    new_tab.append(day)
+            pprint.pprint(new_tab)
+            new_tab = []
 
 def menu():
     terminator = 0
     dh = DatabaseHandler()
     while not terminator:
-        choice = str(input('What do you want to do? print - prints all data, add - adds new country, show - showing plot (using matplotlib) quit - quits app '))
+        choice = str(input('What do you want to do? print - prints all data, print by date - prints filtered data, add - adds new country, show - showing plot (using matplotlib) quit - quits app '))
         if choice == 'add':
             dh.add_country()
         if choice == 'print':
             dh.show_data()
+        if choice == 'print by date':
+            inp = str(input('Give start and end date '))
+            try:
+                start, end = inp.split()
+                print(start, end)
+                start = datetime.datetime.strptime(start, '%Y-%m-%d')
+                end = datetime.datetime.strptime(end, '%Y-%m-%d')
+            except ValueError:
+                print("Wrong date format; Should be YYYY-MM-DD")
+            else:
+                dh.show_data_by_date(start, end)
         if choice == 'show':
             dh.show_on_screen()
         if choice == 'quit':
